@@ -1,5 +1,5 @@
 // 定义外部变量
-let sitename = "域名监控"; //变量名SITENAME，自定义站点名称，默认为"域名监控"
+let sitename = "续期管家"; //变量名SITENAME，自定义站点名称，默认为"续期管家"
 let domains = ""; //KV空间创建SECRET_KV后，新增一组kv对，填入域名信息json格式，必须设置的变量
 let tgid = ""; //变量名TGID，填入TG机器人ID，不需要提醒则不填
 let tgtoken = ""; //变量名TGTOKEN，填入TG的TOKEN，不需要提醒则不填
@@ -183,7 +183,7 @@ async function generatePasswordPage() {
     </head>
     <body>
       <div class="password-container">
-        <h2 class="login-title">域名监控系统</h2>
+        <h2 class="login-title">YUUHEの 续小秘</h2>
         <input type="password" id="password-input" class="password-input" placeholder="请输入密码">
         <button id="login-button" class="login-button">登录</button>
       </div>
@@ -240,10 +240,22 @@ async function generateDomainListPage(domains, SITENAME) {
     const statusColor = isExpired ? '#e74c3c' : '#2ecc71';
     const statusText = isExpired ? '已过期' : '正常';
 
+    // 获取优先级样式
+    const priority = info.priority || 'medium';
+    const priorityClass = `priority-${priority}`;
+    const priorityText = {
+      high: '域名',
+      medium: 'VPS',
+      low: '其他'
+    }[priority];
+
     return `
-      <tr>
+      <tr class="domain-row" data-domain="${info.domain}" data-priority="${priority}">
         <td><span class="status-dot" style="background-color: ${statusColor};" title="${statusText}"></span></td>
-        <td>${info.domain}</td>
+        <td>
+          ${info.domain}
+          <span class="priority-tag ${priorityClass}">${priorityText}</span>
+        </td>
         <td><a href="${info.systemURL}" target="_blank">${info.system}</a></td>
         <td>${info.registrationDate}</td>
         <td>${info.expirationDate}</td>
@@ -254,7 +266,7 @@ async function generateDomainListPage(domains, SITENAME) {
           </div>
         </td>
         <td>
-          <button onclick="editDomain('${info.domain}', '${info.registrationDate}', '${info.expirationDate}', '${info.system}', '${info.systemURL}')" class="edit-btn">编辑</button>
+          <button onclick="editDomain('${info.domain}', '${info.registrationDate}', '${info.expirationDate}', '${info.system}', '${info.systemURL}', '${priority}')" class="edit-btn">编辑</button>
           <button onclick="deleteDomain('${info.domain}')" class="delete-btn">删除</button>
         </td>
       </tr>
@@ -457,6 +469,186 @@ async function generateDomainListPage(domains, SITENAME) {
         .modal-form button:hover {
           background-color: #2980b9;
         }
+        
+        /* 修改表头样式 */
+        th.sortable {
+          position: relative;
+          padding-right: 20px;
+          cursor: pointer;
+          user-select: none;
+        }
+        
+        th.sortable::after {
+          content: '↕';
+          position: absolute;
+          right: 5px;
+          color: #999;
+          font-size: 12px;
+        }
+        
+        th.sortable.asc::after {
+          content: '↑';
+          color: #3498db;
+        }
+        
+        th.sortable.desc::after {
+          content: '↓';
+          color: #3498db;
+        }
+        
+        /* 优先级按钮样式 */
+        .priority-btn {
+          padding: 5px 10px;
+          margin: 0 5px;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          font-size: 12px;
+          background-color: #3498db;
+          color: white;
+        }
+        
+        .priority-btn:hover {
+          background-color: #2980b9;
+        }
+        
+        /* 优先级选择弹窗样式 */
+        .priority-modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .priority-modal-content {
+          background-color: white;
+          margin: 15% auto;
+          padding: 20px;
+          border-radius: 5px;
+          width: 300px;
+          text-align: center;
+        }
+        
+        .priority-options {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin: 20px 0;
+        }
+        
+        .priority-option {
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .priority-option:hover {
+          background-color: #f0f0f0;
+        }
+        
+        .priority-option.selected {
+          background-color: #3498db;
+          color: white;
+          border-color: #3498db;
+        }
+        
+        /* 优先级标签样式 */
+        .priority-tag {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 3px;
+          font-size: 12px;
+          margin-left: 8px;
+          color: white;
+        }
+        
+        .priority-high {
+          background-color: #e74c3c;
+        }
+        
+        .priority-medium {
+          background-color: #f39c12;
+        }
+        
+        .priority-low {
+          background-color: #95a5a6;
+        }
+        
+        /* 优先级筛选按钮样式 */
+        .priority-filter {
+          margin: 10px 0;
+          display: flex;
+          gap: 10px;
+        }
+        
+        .priority-filter button {
+          padding: 5px 15px;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          color: white;
+          font-size: 14px;
+        }
+        
+        .priority-filter button.active {
+          opacity: 1;
+        }
+        
+        .priority-filter button:not(.active) {
+          opacity: 0.6;
+        }
+        
+        .filter-high {
+          background-color: #e74c3c;
+        }
+        
+        .filter-medium {
+          background-color: #f39c12;
+        }
+        
+        .filter-low {
+          background-color: #95a5a6;
+        }
+        
+        .filter-all {
+          background-color: #3498db;
+        }
+        
+        /* 添加优先级选择框样式 */
+        select {
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background-color: white;
+          cursor: pointer;
+        }
+        
+        select:focus {
+          outline: none;
+          border-color: #3498db;
+        }
+        
+        /* 修改表单布局 */
+        #add-domain-form {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 10px;
+          padding: 15px;
+          background-color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 15px;
+        }
+        
+        .modal-form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
       </style>
     </head>
     <body>
@@ -468,19 +660,33 @@ async function generateDomainListPage(domains, SITENAME) {
           <input type="date" id="expirationDate" placeholder="过期日期" required>
           <input type="text" id="system" placeholder="注册商" required>
           <input type="url" id="systemURL" placeholder="注册商 URL" required>
+          <select id="priority" required>
+            <option value="high">域名</option>
+            <option value="medium">VPS</option>
+            <option value="low">其他</option>
+          </select>
           <button type="submit">添加域名</button>
         </form>
+        
+        <!-- 添加优先级筛选按钮 -->
+        <div class="priority-filter">
+          <button class="filter-all active" onclick="filterByPriority('all')">全部</button>
+          <button class="filter-high" onclick="filterByPriority('high')">域名</button>
+          <button class="filter-medium" onclick="filterByPriority('medium')">VPS</button>
+          <button class="filter-low" onclick="filterByPriority('low')">其他</button>
+        </div>
+        
         <div class="table-container">
           <table>
             <thead>
               <tr>
                 <th>状态</th>
-                <th>域名</th>
-                <th>域名注册商</th>
-                <th>注册时间</th>
-                <th>过期时间</th>
-                <th>剩余天数</th>
-                <th>使用进度</th>
+                <th class="sortable" data-sort="domain">域名</th>
+                <th class="sortable" data-sort="system">域名注册商</th>
+                <th class="sortable" data-sort="registrationDate">注册时间</th>
+                <th class="sortable" data-sort="expirationDate">过期时间</th>
+                <th class="sortable" data-sort="daysRemaining">剩余天数</th>
+                <th class="sortable" data-sort="priority">优先级</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -506,8 +712,27 @@ async function generateDomainListPage(domains, SITENAME) {
             <input type="date" id="edit-expirationDate" placeholder="过期日期" required>
             <input type="text" id="edit-system" placeholder="注册商" required>
             <input type="url" id="edit-systemURL" placeholder="注册商 URL" required>
+            <select id="edit-priority" required>
+              <option value="high">域名</option>
+              <option value="medium">VPS</option>
+              <option value="low">其他</option>
+            </select>
             <button type="submit">保存修改</button>
           </form>
+        </div>
+      </div>
+      
+      <!-- 添加优先级修改弹窗 -->
+      <div id="priority-modal" class="priority-modal">
+        <div class="priority-modal-content">
+          <h3>修改优先级</h3>
+          <div class="priority-options">
+            <div class="priority-option" data-priority="high">域名</div>
+            <div class="priority-option" data-priority="medium">VPS</div>
+            <div class="priority-option" data-priority="low">其他</div>
+          </div>
+          <button onclick="savePriority()" class="priority-btn">保存</button>
+          <button onclick="closePriorityModal()" style="margin-left: 10px; background-color: #95a5a6;">取消</button>
         </div>
       </div>
       
@@ -519,45 +744,32 @@ async function generateDomainListPage(domains, SITENAME) {
         </p>
       </div>
       <script>
-        // 处理表单提交
-        const form = document.getElementById('add-domain-form');
-        form.addEventListener('submit', async function(event) {
-          event.preventDefault();
-          const domainInfo = {
-            domain: document.getElementById('domain').value,
-            registrationDate: document.getElementById('registrationDate').value,
-            expirationDate: document.getElementById('expirationDate').value,
-            system: document.getElementById('system').value,
-            systemURL: document.getElementById('systemURL').value
-          };
-          await fetch('/add-domain', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(domainInfo)
-          });
-          alert('域名信息已保存');
-          // 刷新页面以显示新添加的域名
-          window.location.reload();
-        });
-
-        // 删除域名
+        // 删除域名功能
         async function deleteDomain(domain) {
           if (confirm('确认删除该域名信息?')) {
-            await fetch('/delete-domain', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ domain })
-            });
-            alert('域名信息已删除');
-            // 刷新页面以更新域名列表
-            window.location.reload();
+            try {
+              const response = await fetch('/delete-domain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain })
+              });
+              
+              if (response.ok) {
+                alert('域名信息已删除');
+                window.location.reload();
+              } else {
+                alert('删除失败，请重试');
+              }
+            } catch (error) {
+              alert('删除请求失败: ' + error.message);
+            }
           }
         }
-
-         
-        // 编辑域名相关功能
+        
+        // 编辑域名功能
         const editModal = document.getElementById('edit-modal');
         const closeModalBtn = document.querySelector('.close-modal');
+        const editForm = document.getElementById('edit-domain-form');
         
         // 关闭模态框
         closeModalBtn.addEventListener('click', function() {
@@ -572,19 +784,19 @@ async function generateDomainListPage(domains, SITENAME) {
         });
         
         // 打开编辑模态框并填充数据
-        function editDomain(domain, registrationDate, expirationDate, system, systemURL) {
+        function editDomain(domain, registrationDate, expirationDate, system, systemURL, priority) {
           document.getElementById('edit-domain-original').value = domain;
           document.getElementById('edit-domain').value = domain;
           document.getElementById('edit-registrationDate').value = registrationDate;
           document.getElementById('edit-expirationDate').value = expirationDate;
           document.getElementById('edit-system').value = system;
           document.getElementById('edit-systemURL').value = systemURL;
+          document.getElementById('edit-priority').value = priority;
           
           editModal.style.display = 'block';
         }
         
         // 处理编辑表单提交
-        const editForm = document.getElementById('edit-domain-form');
         editForm.addEventListener('submit', async function(event) {
           event.preventDefault();
           
@@ -595,7 +807,8 @@ async function generateDomainListPage(domains, SITENAME) {
             expirationDate: document.getElementById('edit-expirationDate').value,
             system: document.getElementById('edit-system').value,
             systemURL: document.getElementById('edit-systemURL').value,
-            originalDomain: originalDomain // 添加原始域名以便后端识别
+            originalDomain: originalDomain,
+            priority: document.getElementById('edit-priority').value
           };
           
           try {
@@ -607,7 +820,6 @@ async function generateDomainListPage(domains, SITENAME) {
             
             if (response.ok) {
               alert('域名信息已更新');
-              // 关闭模态框并刷新页面
               editModal.style.display = 'none';
               window.location.reload();
             } else {
@@ -618,6 +830,237 @@ async function generateDomainListPage(domains, SITENAME) {
             alert('更新请求失败: ' + error.message);
           }
         });
+        
+        // 处理添加域名表单提交
+        const form = document.getElementById('add-domain-form');
+        form.addEventListener('submit', async function(event) {
+          event.preventDefault();
+          const domainInfo = {
+            domain: document.getElementById('domain').value,
+            registrationDate: document.getElementById('registrationDate').value,
+            expirationDate: document.getElementById('expirationDate').value,
+            system: document.getElementById('system').value,
+            systemURL: document.getElementById('systemURL').value,
+            priority: document.getElementById('priority').value
+          };
+          
+          try {
+            const response = await fetch('/add-domain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(domainInfo)
+            });
+            
+            if (response.ok) {
+              alert('域名信息已保存');
+              window.location.reload();
+            } else {
+              alert('保存失败，请重试');
+            }
+          } catch (error) {
+            alert('保存请求失败: ' + error.message);
+          }
+        });
+
+        // 添加优先级修改相关功能
+        let currentDomain = null;
+        let currentPriority = null;
+        
+        function changePriority(domain, priority) {
+          currentDomain = domain;
+          currentPriority = priority;
+          
+          // 显示弹窗
+          const modal = document.getElementById('priority-modal');
+          modal.style.display = 'block';
+          
+          // 设置当前选中的优先级
+          document.querySelectorAll('.priority-option').forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.priority === priority) {
+              option.classList.add('selected');
+            }
+          });
+        }
+        
+        function closePriorityModal() {
+          document.getElementById('priority-modal').style.display = 'none';
+        }
+        
+        // 为优先级选项添加点击事件
+        document.querySelectorAll('.priority-option').forEach(option => {
+          option.addEventListener('click', () => {
+            document.querySelectorAll('.priority-option').forEach(opt => {
+              opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+            currentPriority = option.dataset.priority;
+          });
+        });
+        
+        async function savePriority() {
+          if (!currentDomain || !currentPriority) return;
+          
+          try {
+            const response = await fetch('/edit-domain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                domain: currentDomain,
+                originalDomain: currentDomain,
+                priority: currentPriority
+              })
+            });
+            
+            if (response.ok) {
+              // 更新当前行的优先级标签
+              const row = document.querySelector('tr[data-domain="' + currentDomain + '"]');
+              if (row) {
+                row.dataset.priority = currentPriority;
+                const priorityTag = row.querySelector('.priority-tag');
+                if (priorityTag) {
+                  priorityTag.className = 'priority-tag priority-' + currentPriority;
+                  priorityTag.textContent = {
+                    high: '域名',
+                    medium: 'VPS',
+                    low: '其他'
+                  }[currentPriority];
+                }
+              }
+              alert('优先级已更新');
+              window.location.reload();
+            } else {
+              alert('更新失败，请重试');
+            }
+          } catch (error) {
+            alert('更新请求失败: ' + error.message);
+          }
+          
+          closePriorityModal();
+        }
+        
+        // 点击弹窗外部关闭
+        window.addEventListener('click', function(event) {
+          const modal = document.getElementById('priority-modal');
+          if (event.target === modal) {
+            closePriorityModal();
+          }
+        });
+
+        // 添加优先级筛选功能
+        function filterByPriority(priority) {
+          // 更新按钮状态
+          document.querySelectorAll('.priority-filter button').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          document.querySelector('.filter-' + priority).classList.add('active');
+          
+          // 筛选表格行
+          const rows = document.querySelectorAll('.domain-row');
+          rows.forEach(row => {
+            if (priority === 'all' || row.dataset.priority === priority) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        }
+
+        // 添加排序功能
+        let currentSort = {
+          column: 'priority', // 默认按优先级排序
+          direction: 'asc'
+        };
+        
+        // 初始化排序
+        document.addEventListener('DOMContentLoaded', function() {
+          // 为所有可排序的表头添加点击事件
+          document.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+              const column = th.dataset.sort;
+              sortTable(column);
+            });
+          });
+          
+          // 默认按优先级排序
+          sortTable('priority');
+        });
+        
+        function sortTable(column) {
+          const tbody = document.querySelector('tbody');
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          
+          // 更新排序状态
+          if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+          }
+          
+          // 更新表头样式
+          document.querySelectorAll('th.sortable').forEach(th => {
+            th.classList.remove('asc', 'desc');
+            if (th.dataset.sort === column) {
+              th.classList.add(currentSort.direction);
+            }
+          });
+          
+          // 排序行
+          rows.sort((a, b) => {
+            let aValue, bValue;
+            
+            switch(column) {
+              case 'domain':
+                aValue = a.cells[1].textContent.trim();
+                bValue = b.cells[1].textContent.trim();
+                break;
+              case 'system':
+                aValue = a.cells[2].textContent.trim();
+                bValue = b.cells[2].textContent.trim();
+                break;
+              case 'registrationDate':
+                aValue = new Date(a.cells[3].textContent);
+                bValue = new Date(b.cells[3].textContent);
+                break;
+              case 'expirationDate':
+                aValue = new Date(a.cells[4].textContent);
+                bValue = new Date(b.cells[4].textContent);
+                break;
+              case 'daysRemaining':
+                aValue = parseInt(a.cells[5].textContent) || 0;
+                bValue = parseInt(b.cells[5].textContent) || 0;
+                break;
+              case 'priority':
+                // 定义优先级顺序
+                const priorityOrder = {
+                  '域名': 0,
+                  'VPS': 1,
+                  '其他': 2
+                };
+                // 获取优先级文本
+                const getPriorityText = (cell) => {
+                  const text = cell.textContent.trim();
+                  return text.includes('域名') ? '域名' : 
+                         text.includes('VPS') ? 'VPS' : '其他';
+                };
+                aValue = priorityOrder[getPriorityText(a.cells[1])] || 2;
+                bValue = priorityOrder[getPriorityText(b.cells[1])] || 2;
+                break;
+              default:
+                return 0;
+            }
+            
+            if (currentSort.direction === 'asc') {
+              return aValue > bValue ? 1 : -1;
+            } else {
+              return aValue < bValue ? 1 : -1;
+            }
+          });
+          
+          // 重新插入排序后的行
+          rows.forEach(row => tbody.appendChild(row));
+        }
       </script>
     </body>
     </html>
@@ -690,7 +1133,8 @@ export default {
               registrationDate: requestBody.registrationDate,
               expirationDate: requestBody.expirationDate,
               system: requestBody.system,
-              systemURL: requestBody.systemURL
+              systemURL: requestBody.systemURL,
+              priority: requestBody.priority
             };
             
             await saveDomainToKV(env, newDomainInfo);
@@ -701,7 +1145,8 @@ export default {
               registrationDate: requestBody.registrationDate,
               expirationDate: requestBody.expirationDate,
               system: requestBody.system,
-              systemURL: requestBody.systemURL
+              systemURL: requestBody.systemURL,
+              priority: requestBody.priority
             };
             
             await editDomainInKV(env, domainInfo);
